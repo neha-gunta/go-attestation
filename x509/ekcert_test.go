@@ -254,65 +254,65 @@ func TestToEKCertificate_Success(t *testing.T) {
 	}
 }
 
-func TestToEKCertificate_FailuresTests(t *testing.T) {
+func TestToEKCertificate_Failures(t *testing.T) {
 	tests := []struct {
 		name       string
 		modifyCert func(*testing.T, *x509.Certificate)
 		wantErr    error
 	}{
 		{
-			name: "Version is 2 (failure)",
+			name: "Version is 2",
 			modifyCert: func(t *testing.T, cert *x509.Certificate) {
 				cert.Version = 2
 			},
-			wantErr: errors.New("Invalid version of EK certificate: 2"),
+			wantErr: errors.New("invalid version of EK certificate: 2"),
 		},
 		{
-			name: "SerialNumber is zero (failure)",
+			name: "SerialNumber is zero",
 			modifyCert: func(t *testing.T, cert *x509.Certificate) {
 				cert.SerialNumber = big.NewInt(0)
 			},
 			wantErr: errors.New("SerialNumber is not a positive integer"),
 		},
 		{
-			name: "SerialNumber negative (failure)",
+			name: "SerialNumber negative",
 			modifyCert: func(t *testing.T, cert *x509.Certificate) {
 				cert.SerialNumber = big.NewInt(-1)
 			},
 			wantErr: errors.New("SerialNumber is not a positive integer"),
 		},
 		{
-			name: "SerialNumber nil (failure)",
+			name: "SerialNumber nil",
 			modifyCert: func(t *testing.T, cert *x509.Certificate) {
 				cert.SerialNumber = nil
 			},
 			wantErr: errors.New("SerialNumber is nil, expected a positive integer"),
 		},
 		{
-			name: "Issuer is empty (failure)",
+			name: "Issuer is empty",
 			modifyCert: func(t *testing.T, cert *x509.Certificate) {
 				cert.RawIssuer = []byte{0x30, 0x00}
 			},
-			wantErr: errors.New("Issuer is empty"),
+			wantErr: errors.New("issuer is empty"),
 		},
 		{
-			name: "BasicConstraints not set (failure)",
+			name: "BasicConstraints not set",
 			modifyCert: func(t *testing.T, cert *x509.Certificate) {
 				cert.BasicConstraintsValid = false
 				cert.IsCA = false
 			},
-			wantErr: errors.New("Basic Constraints are not valid or it is a CA certificate"),
+			wantErr: errors.New("BasicConstraints are not valid or it is a CA certificate"),
 		},
 		{
-			name: "BasicConstraints is set but cert is a CA (failure)",
+			name: "BasicConstraints is set but cert is a CA",
 			modifyCert: func(t *testing.T, cert *x509.Certificate) {
 				cert.BasicConstraintsValid = true
 				cert.IsCA = true
 			},
-			wantErr: errors.New("Basic Constraints are not valid or it is a CA certificate"),
+			wantErr: errors.New("BasicConstraints are not valid or it is a CA certificate"),
 		},
 		{
-			name: "BasicConstraints is not critical (failure)",
+			name: "BasicConstraints is not critical",
 			modifyCert: func(t *testing.T, cert *x509.Certificate) {
 				for i, ext := range cert.Extensions {
 					if ext.Id.Equal(oidBasicConstraints) {
@@ -320,10 +320,10 @@ func TestToEKCertificate_FailuresTests(t *testing.T) {
 					}
 				}
 			},
-			wantErr: errors.New("Extension \"Basic Constraints\" is not critical, supposed to be critical"),
+			wantErr: errors.New("extension \"Basic Constraints\" is not critical, supposed to be critical"),
 		},
 		{
-			name: "SAN is not critical when Subject is empty (failure)",
+			name: "SAN is not critical when Subject is empty",
 			modifyCert: func(t *testing.T, cert *x509.Certificate) {
 				cert.RawSubject = []byte{0x30, 0x00}
 				for i, ext := range cert.Extensions {
@@ -335,28 +335,28 @@ func TestToEKCertificate_FailuresTests(t *testing.T) {
 			wantErr: errors.New("SubjectAltName extension must be critical when Subject is not present"),
 		},
 		{
-			name: "MUST extension is missing (failure)",
+			name: "MUST extension is missing",
 			modifyCert: func(t *testing.T, cert *x509.Certificate) {
 				cert.Extensions = []pkix.Extension{}
 			},
-			wantErr: errors.New("Extension SubjectAltName is missing"),
+			wantErr: errors.New("extension SubjectAltName is missing"),
 		},
 		{
-			name: "AuthorityKeyId empty (failure)",
+			name: "AuthorityKeyId empty",
 			modifyCert: func(t *testing.T, cert *x509.Certificate) {
 				cert.AuthorityKeyId = []byte{}
 			},
 			wantErr: errors.New("Authority Key ID is missing"),
 		},
 		{
-			name: "Authority Key Identifier is critical (failure)",
+			name: "Authority Key Identifier is critical",
 			modifyCert: func(t *testing.T, cert *x509.Certificate) {
 				modifyExtension(t, cert, oidAuthorityKeyID, []byte{0x30, 0x00}, true)
 			},
-			wantErr: errors.New("Extension \"Authority Key Identifier\" is critical, supposed to be non-critical"),
+			wantErr: errors.New("extension \"Authority Key Identifier\" is critical, supposed to be non-critical"),
 		},
 		{
-			name: "KeyUsage not set (failure)",
+			name: "KeyUsage not set",
 			modifyCert: func(t *testing.T, cert *x509.Certificate) {
 				cert.PublicKeyAlgorithm = x509.RSA
 				cert.KeyUsage = 0
@@ -364,7 +364,7 @@ func TestToEKCertificate_FailuresTests(t *testing.T) {
 			wantErr: errors.New("KeyUsage field is not set"),
 		},
 		{
-			name: "KeyUsageKeyEncipherment not set for RSA (failure)",
+			name: "KeyUsageKeyEncipherment not set for RSA",
 			modifyCert: func(t *testing.T, cert *x509.Certificate) {
 				cert.PublicKeyAlgorithm = x509.RSA
 				cert.KeyUsage = x509.KeyUsageKeyAgreement
@@ -372,7 +372,7 @@ func TestToEKCertificate_FailuresTests(t *testing.T) {
 			wantErr: errors.New("KeyUsageKeyEncipherment is not set for RSA public key type"),
 		},
 		{
-			name: "KeyUsageKeyAgreement not set for ECDSA (failure)",
+			name: "KeyUsageKeyAgreement not set for ECDSA",
 			modifyCert: func(t *testing.T, cert *x509.Certificate) {
 				cert.PublicKeyAlgorithm = x509.ECDSA
 				cert.KeyUsage = x509.KeyUsageKeyEncipherment
@@ -380,7 +380,7 @@ func TestToEKCertificate_FailuresTests(t *testing.T) {
 			wantErr: errors.New("KeyUsageKeyAgreement is not set for ECDSA public key type"),
 		},
 		{
-			name: "Key Usage is not critical (failure)",
+			name: "Key Usage is not critical",
 			modifyCert: func(t *testing.T, cert *x509.Certificate) {
 				for i, ext := range cert.Extensions {
 					if ext.Id.Equal(oidKeyUsage) {
@@ -388,10 +388,10 @@ func TestToEKCertificate_FailuresTests(t *testing.T) {
 					}
 				}
 			},
-			wantErr: errors.New("Extension \"Key Usage\" is not critical, supposed to be critical"),
+			wantErr: errors.New("extension \"Key Usage\" is not critical, supposed to be critical"),
 		},
 		{
-			name: "CertificatePolicies present but empty PolicyIdentifiers (failure)",
+			name: "CertificatePolicies present but empty PolicyIdentifiers",
 			modifyCert: func(t *testing.T, cert *x509.Certificate) {
 				modifyExtension(t, cert, oid.CertificatePolicies, []byte{0x30, 0x00}, true)
 				cert.PolicyIdentifiers = []asn1.ObjectIdentifier{}
@@ -399,32 +399,32 @@ func TestToEKCertificate_FailuresTests(t *testing.T) {
 			wantErr: errors.New("Certificate Policies should contain at least 1 policy identifier if the extension is present"),
 		},
 		{
-			name: "AuthorityInfoAccess is critical (failure)",
+			name: "AuthorityInfoAccess is critical",
 			modifyCert: func(t *testing.T, cert *x509.Certificate) {
 				modifyExtension(t, cert, oidAuthorityInfoAccess, []byte{0x30, 0x00}, true)
 			},
-			wantErr: errors.New("Extension \"Authority Info Access\" is critical, supposed to be non-critical"),
+			wantErr: errors.New("extension \"Authority Info Access\" is critical, supposed to be non-critical"),
 		},
 		{
-			name: "CRLDistributionPoints is critical (failure)",
+			name: "CRLDistributionPoints is critical",
 			modifyCert: func(t *testing.T, cert *x509.Certificate) {
 				modifyExtension(t, cert, oidCRLDistributionPoints, []byte{0x30, 0x00}, true)
 			},
-			wantErr: errors.New("Extension \"CRL Distribution Points\" is critical, supposed to be non-critical"),
+			wantErr: errors.New("extension \"CRL Distribution Points\" is critical, supposed to be non-critical"),
 		},
 		{
-			name: "ExtendedKeyUsage is critical (failure)",
+			name: "ExtendedKeyUsage is critical",
 			modifyCert: func(t *testing.T, cert *x509.Certificate) {
 				modifyExtension(t, cert, oidExtendedKeyUsage, []byte{0x30, 0x00}, true)
 			},
-			wantErr: errors.New("Extension \"Extended Key Usage\" is critical, supposed to be non-critical"),
+			wantErr: errors.New("extension \"Extended Key Usage\" is critical, supposed to be non-critical"),
 		},
 		{
-			name: "SubjectKeyIdentifier is critical (failure)",
+			name: "SubjectKeyIdentifier is critical",
 			modifyCert: func(t *testing.T, cert *x509.Certificate) {
 				modifyExtension(t, cert, oidSubjectKeyIdentifier, []byte{0x30, 0x00}, true)
 			},
-			wantErr: errors.New("Extension \"Subject Key Identifier\" is critical, supposed to be non-critical"),
+			wantErr: errors.New("extension \"Subject Key Identifier\" is critical, supposed to be non-critical"),
 		},
 	}
 

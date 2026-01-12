@@ -72,13 +72,18 @@ func ParseEKCertificate(der []byte) (*EKCertificate, error) {
 // validates the EK cert according to Section 3.2 of
 // https://trustedcomputinggroup.org/wp-content/uploads/TCG-EK-Credential-Profile-for-TPM-Family-2.0-Level-0-Version-2.6_pub.pdf
 //
-// Extensions handled by this function will be removed from
-// `cert.UnhandledCriticalExtensions` in place if present.
+// This function checks for the presence and criticality of required extensions
+// and performs basic structural validation, but it does NOT validate the
+// semantic values of every extension. Some additional validation may be necessary depending on the use case.
+//
+// Extensions handled by this function will be removed from `cert.UnhandledCriticalExtensions` in place if present.
+//
+// TODO: Handle TPM Security Assertions (Section 3.1.1 from the EK Credential profile spec)
 func ToEKCertificate(cert *x509.Certificate) (*EKCertificate, error) {
 	// Some older EK certificates have RSA-OAEP public keys, which are not
 	// parsed by crypto/x509, resulting in PublicKey being nil.
 	if cert.PublicKey == nil {
-		return nil, errors.New("PublicKey is nil")
+		return nil, errors.New("publicKey is nil")
 	}
 
 	var spec TpmSpecification
@@ -88,7 +93,7 @@ func ToEKCertificate(cert *x509.Certificate) (*EKCertificate, error) {
 
 	// Version must be 3.
 	if cert.Version != 3 {
-		return nil, fmt.Errorf("Invalid version of EK certificate: %d", cert.Version)
+		return nil, fmt.Errorf("invalid version of EK certificate: %d", cert.Version)
 	}
 
 	// SerialNumber must be a positive integer and not nil.
@@ -98,14 +103,14 @@ func ToEKCertificate(cert *x509.Certificate) (*EKCertificate, error) {
 
 	// Issuer must be present.
 	if bytes.Equal(cert.RawIssuer, emptyASN1Subject) {
-		return nil, errors.New("Issuer is empty")
+		return nil, errors.New("issuer is empty")
 	}
 
 	isSubjectEmpty := bytes.Equal(cert.RawSubject, emptyASN1Subject)
 
 	// Basic Constraints must be valid and the certificate must not be a CA.
 	if !cert.BasicConstraintsValid || cert.IsCA {
-		return nil, errors.New("Basic Constraints are not valid or it is a CA certificate")
+		return nil, errors.New("BasicConstraints are not valid or it is a CA certificate")
 	}
 
 	for _, ext := range cert.Extensions {
@@ -137,15 +142,15 @@ func ToEKCertificate(cert *x509.Certificate) (*EKCertificate, error) {
 			}
 		case ext.Id.Equal(oidBasicConstraints):
 			if !ext.Critical {
-				return nil, errors.New("Extension \"Basic Constraints\" is not critical, supposed to be critical")
+				return nil, errors.New("extension \"Basic Constraints\" is not critical, supposed to be critical")
 			}
 		case ext.Id.Equal(oidKeyUsage):
 			if !ext.Critical {
-				return nil, errors.New("Extension \"Key Usage\" is not critical, supposed to be critical")
+				return nil, errors.New("extension \"Key Usage\" is not critical, supposed to be critical")
 			}
 		case ext.Id.Equal(oidAuthorityKeyID):
 			if ext.Critical {
-				return nil, errors.New("Extension \"Authority Key Identifier\" is critical, supposed to be non-critical")
+				return nil, errors.New("extension \"Authority Key Identifier\" is critical, supposed to be non-critical")
 			}
 		case ext.Id.Equal(oid.CertificatePolicies):
 			if len(cert.PolicyIdentifiers) == 0 {
@@ -153,19 +158,19 @@ func ToEKCertificate(cert *x509.Certificate) (*EKCertificate, error) {
 			}
 		case ext.Id.Equal(oidAuthorityInfoAccess):
 			if ext.Critical {
-				return nil, errors.New("Extension \"Authority Info Access\" is critical, supposed to be non-critical")
+				return nil, errors.New("extension \"Authority Info Access\" is critical, supposed to be non-critical")
 			}
 		case ext.Id.Equal(oidCRLDistributionPoints):
 			if ext.Critical {
-				return nil, errors.New("Extension \"CRL Distribution Points\" is critical, supposed to be non-critical")
+				return nil, errors.New("extension \"CRL Distribution Points\" is critical, supposed to be non-critical")
 			}
 		case ext.Id.Equal(oidExtendedKeyUsage):
 			if ext.Critical {
-				return nil, errors.New("Extension \"Extended Key Usage\" is critical, supposed to be non-critical")
+				return nil, errors.New("extension \"Extended Key Usage\" is critical, supposed to be non-critical")
 			}
 		case ext.Id.Equal(oidSubjectKeyIdentifier):
 			if ext.Critical {
-				return nil, errors.New("Extension \"Subject Key Identifier\" is critical, supposed to be non-critical")
+				return nil, errors.New("extension \"Subject Key Identifier\" is critical, supposed to be non-critical")
 			}
 		}
 
@@ -175,7 +180,7 @@ func ToEKCertificate(cert *x509.Certificate) (*EKCertificate, error) {
 	// Check that all must-have extensions are present.
 	for _, extOID := range mustHaveExtensions {
 		if !extPresent[extOID.String()] {
-			return nil, fmt.Errorf("Extension %v is missing", oidToExtNameMap[extOID.String()])
+			return nil, fmt.Errorf("extension %v is missing", oidToExtNameMap[extOID.String()])
 		}
 	}
 
@@ -196,6 +201,7 @@ func ToEKCertificate(cert *x509.Certificate) (*EKCertificate, error) {
 		}
 	}
 
+	// Iterate through the unhandled critical extensions to remove the handled extensions from the list.
 	for i, ext := range cert.UnhandledCriticalExtensions {
 		if ext.Equal(oid.SubjectAltName) {
 			length := len(cert.UnhandledCriticalExtensions)
@@ -302,7 +308,7 @@ func validateKeyUsage(certType x509.PublicKeyAlgorithm, keyUsage x509.KeyUsage) 
 			return fmt.Errorf("KeyUsageKeyAgreement is not set for ECDSA public key type")
 		}
 	default:
-		return fmt.Errorf("Unsupported public key type: %v", certType)
+		return fmt.Errorf("unsupported public key type: %v", certType)
 	}
 	return nil
 }
