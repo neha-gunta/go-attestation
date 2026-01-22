@@ -346,7 +346,7 @@ func TestToEKCertificate_Failures(t *testing.T) {
 			modifyCert: func(t *testing.T, cert *x509.Certificate) {
 				cert.AuthorityKeyId = []byte{}
 			},
-			wantErr: errors.New("Authority Key ID is missing"),
+			wantErr: errors.New("missing Authority Key ID"),
 		},
 		{
 			name: "Authority Key Identifier is critical",
@@ -396,7 +396,7 @@ func TestToEKCertificate_Failures(t *testing.T) {
 				modifyExtension(t, cert, oid.CertificatePolicies, []byte{0x30, 0x00}, true)
 				cert.PolicyIdentifiers = []asn1.ObjectIdentifier{}
 			},
-			wantErr: errors.New("Certificate Policies should contain at least 1 policy identifier if the extension is present"),
+			wantErr: errors.New("extension \"Certificate Policies\" should contain at least 1 policy identifier if the extension is present"),
 		},
 		{
 			name: "AuthorityInfoAccess is critical",

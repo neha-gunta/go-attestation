@@ -154,7 +154,7 @@ func ToEKCertificate(cert *x509.Certificate) (*EKCertificate, error) {
 			}
 		case ext.Id.Equal(oid.CertificatePolicies):
 			if len(cert.PolicyIdentifiers) == 0 {
-				return nil, errors.New("Certificate Policies should contain at least 1 policy identifier if the extension is present")
+				return nil, errors.New("extension \"Certificate Policies\" should contain at least 1 policy identifier if the extension is present")
 			}
 		case ext.Id.Equal(oidAuthorityInfoAccess):
 			if ext.Critical {
@@ -186,7 +186,7 @@ func ToEKCertificate(cert *x509.Certificate) (*EKCertificate, error) {
 
 	// Authority Key ID must be present and non-empty.
 	if len(cert.AuthorityKeyId) == 0 {
-		return nil, errors.New("Authority Key ID is missing")
+		return nil, errors.New("missing Authority Key ID")
 	}
 
 	// KeyUsage must be set and correctly set for the public key type.
